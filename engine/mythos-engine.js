@@ -327,7 +327,7 @@
           var val = c.series[j].values[i] || 0, bh = ph * Math.max(val, 0) / max;
           var bx = c.stacked ? x0 : x0 + j * bwid, by = base - bh;
           s += '<rect class="m-bar" x="' + bx.toFixed(1) + '" y="' + by.toFixed(1) + '" width="' + Math.max(bwid - (c.stacked ? 0 : 4), 2).toFixed(1) + '" height="' + Math.max(bh, 0).toFixed(1) + '" rx="' + (c.stacked ? 2 : 6) + '" fill="' + c.series[j].color + '" style="--d:' + (i * sc + j) + '"/>';
-          if (!c.stacked && sc <= 2 && nL <= 12) s += '<text x="' + (bx + (bwid - 4) / 2).toFixed(1) + '" y="' + (by - 8).toFixed(1) + '" text-anchor="middle" class="m-val">' + esc(fmt(val)) + '</text>';
+          if (!c.stacked && (sc === 1 || bwid >= 80) && nL <= 12) s += '<text x="' + (bx + (bwid - 4) / 2).toFixed(1) + '" y="' + (by - 8).toFixed(1) + '" text-anchor="middle" class="m-val">' + esc(fmt(val)) + '</text>';
           if (c.stacked) base = by;
         }
         if (i % step === 0) s += '<text x="' + (L + gw * i + gw / 2).toFixed(1) + '" y="' + (T + ph + 28) + '" text-anchor="middle" class="m-axis">' + esc(trunc(c.labels[i], 14)) + '</text>';
