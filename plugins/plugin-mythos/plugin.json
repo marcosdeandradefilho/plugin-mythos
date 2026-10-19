@@ -1,0 +1,40 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "plugin-mythos",
+  "version": "1.0.0",
+  "description": "Create presentations, websites, landing pages and interactive lessons rendered live inside ChatGPT, with a shareable link, HTML download and PDF printing.",
+  "author": {
+    "name": "Marcos de Andrade Filho",
+    "url": "https://github.com/marcosdeandradefilho"
+  },
+  "homepage": "https://plugin-mythos.vercel.app",
+  "repository": "https://github.com/marcosdeandradefilho/plugin-mythos",
+  "license": "MIT",
+  "keywords": ["slides", "presentations", "website", "landing-page", "interactive", "quiz", "education", "design", "mcp-apps"],
+  "extensions": {
+    "com.openai": {
+      "onboardingSkill": "./skills/setup/SKILL.md",
+      "interface": {
+        "displayName": "Mythos",
+        "shortDescription": "Slides, sites and interactive lessons rendered in the chat",
+        "longDescription": "Mythos turns ChatGPT into a presentation and web design studio. It plans with a design brief, renders decks (18 layouts, animated charts, quizzes, flip cards, speaker notes), websites and landing pages (hero, features, pricing, FAQ, testimonials, forms) and fully custom interactive HTML directly in the conversation, then gives a shareable link that opens fullscreen, downloads a self-contained HTML file and prints to PDF.",
+        "developerName": "Marcos de Andrade Filho",
+        "category": "Creativity",
+        "capabilities": ["Interactive", "Write"],
+        "websiteURL": "https://plugin-mythos.vercel.app",
+        "privacyPolicyURL": "https://plugin-mythos.vercel.app/privacy",
+        "termsOfServiceURL": "https://plugin-mythos.vercel.app/terms",
+        "defaultPrompt": [
+          "Crie uma apresentação de 10 slides sobre o Modernismo brasileiro para o ensino médio",
+          "Crie uma landing page para o meu curso online de escrita",
+          "Monte um quiz interativo de 8 perguntas sobre frações"
+        ],
+        "brandColor": "#8B5CF6",
+        "composerIcon": "./assets/icon.png",
+        "logo": "./assets/logo.png",
+        "logoDark": "./assets/logo.png",
+        "screenshots": []
+      }
+    }
+  }
+}

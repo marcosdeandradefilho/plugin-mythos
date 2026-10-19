@@ -1,0 +1,11 @@
+interface:
+  display_name: "Mythos Slides"
+  short_description: "Presentations rendered live in the chat"
+  default_prompt: "Use Mythos to create a 10-slide presentation about this topic, with charts, a quiz and speaker notes."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "mythos"
+      description: "Mythos design brief and slide renderer"
+      transport: "streamable_http"
+      url: "https://plugin-mythos.vercel.app/mcp"

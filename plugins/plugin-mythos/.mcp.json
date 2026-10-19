@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "mythos": {
+      "type": "http",
+      "url": "https://plugin-mythos.vercel.app/mcp",
+      "note": "Plugin Mythos MCP server (stateless, no authentication). Renders slides, websites and interactive HTML with MCP Apps UI."
+    }
+  }
+}

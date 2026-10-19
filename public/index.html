@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Plugin Mythos para ChatGPT</title>
+<link rel="icon" href="/favicon.png">
+<meta name="description" content="Plugin para ChatGPT que cria slides, sites e páginas interativas renderizados dentro do chat, com link compartilhável, download em HTML e PDF.">
+<style>html,body{margin:0;background:#0b0b14}</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="/engine.js"></script>
+<script src="/demos.js"></script>
+<script>
+(async function () {
+  'use strict';
+  async function encode(obj) {
+    var stream = new Blob([JSON.stringify(obj)]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+    var buf = new Uint8Array(await new Response(stream).arrayBuffer()), bin = '';
+    for (var i = 0; i < buf.length; i++) bin += String.fromCharCode(buf[i]);
+    return btoa(bin).replace(/[+]/g, '-').replace(/[/]/g, '_').replace(/=+$/, '');
+  }
+  var D = window.MYTHOS_DEMOS, origin = location.origin;
+  var mcpUrl = origin + '/mcp';
+  var links = { deck: '#', site: '#', html: '#' };
+  if (typeof CompressionStream !== 'undefined') {
+    links.deck = origin + '/view#d=' + await encode(Object.assign({ v: 1, kind: 'slides' }, D.deck));
+    links.site = origin + '/view#d=' + await encode(Object.assign({ v: 1, kind: 'site' }, D.site));
+    links.html = origin + '/view#d=' + await encode({ v: 1, kind: 'html', title: D.html.title, html: D.html.html });
+  }
+  var page = {
+    kind: 'site',
+    title: 'Plugin Mythos',
+    theme: 'aurora',
+    lang: 'pt-BR',
+    nav: { brand: 'Plugin Mythos', icon: 'sparkles', cta: { label: 'Instalar', url: '#instalar' } },
+    sections: [
+      { type: 'hero', badge: 'Plugin para ChatGPT · MCP Apps', title: 'Slides, sites e aulas interativas {dentro do ChatGPT}', subtitle: 'O ChatGPT planeja o conteúdo com um método de design e o Mythos renderiza na hora, no próprio chat: navegação, tela cheia, gráficos, quizzes e um link para compartilhar, baixar em HTML ou imprimir em PDF.', primaryCta: { label: 'Instalar agora', url: '#instalar' }, secondaryCta: { label: 'Ver demonstrações', url: '#demos' } },
+      { type: 'features', id: 'recursos', navLabel: 'Recursos', kicker: 'O que ele faz', title: 'Um estúdio de apresentação no chat', items: [
+        { icon: 'layers', title: 'Slides 16:9', text: '18 layouts: título, agenda, estatísticas animadas, gráficos, linha do tempo, comparação, tabela, código, citação, encerramento.' },
+        { icon: 'globe', title: 'Sites e landing pages', text: 'Hero, recursos, preços, depoimentos, FAQ, equipe, galeria, formulário e CTA, responsivos e animados.' },
+        { icon: 'target', title: 'Interatividade', text: 'Quizzes com feedback, flashcards que viram, revelação item a item e HTML livre para jogos e simulações.' },
+        { icon: 'chart', title: 'Gráficos nativos', text: 'Barras, linhas, áreas, pizza, rosca e barras horizontais, desenhados em SVG com animação.' },
+        { icon: 'sparkles', title: 'Método de design', text: 'Antes de renderizar, o ChatGPT recebe um brief com narrativa, temas, regras de texto e um crítico de qualidade.' },
+        { icon: 'arrow', title: 'Link, HTML e PDF', text: 'Cada resultado gera um link que abre em tela cheia, baixa um HTML autocontido e imprime em PDF.' }
+      ] },
+      { type: 'steps', id: 'como', navLabel: 'Como funciona', title: 'Como funciona', items: [
+        { icon: 'message', title: 'Você pede', text: '"Crie uma aula de 10 slides sobre Machado de Assis para o 2º ano."' },
+        { icon: 'compass', title: 'O ChatGPT planeja', text: 'Chama mythos_design_brief e escreve o roteiro completo.' },
+        { icon: 'layers', title: 'O Mythos desenha', text: 'mythos_render_slides mostra o deck dentro da conversa.' },
+        { icon: 'check', title: 'Crítica e ajuste', text: 'Avisos de qualidade voltam ao modelo, que corrige antes de responder.' }
+      ] },
+      { type: 'cta', id: 'demos', navLabel: 'Demos', title: 'Veja o resultado real', text: 'Estas demonstrações são geradas pelo mesmo motor que roda dentro do ChatGPT.', button: { label: 'Abrir deck de exemplo', url: links.deck } },
+      { type: 'split', title: 'Mais demonstrações', text: 'Abra também uma landing page completa e um exemplo de HTML interativo.', bullets: ['[Landing page de exemplo](' + links.site + ')', '[Quiz em HTML livre](' + links.html + ')', '[Deck de aula com quiz e flashcards](' + links.deck + ')'], visual: 'grid' },
+      { type: 'text', id: 'instalar', navLabel: 'Instalar', title: 'Instalar no ChatGPT', paragraphs: [
+        '**1.** Abra **chatgpt.com/plugins**, clique no **+** e escolha **Add custom MCP server**. Se a opção não aparecer, ative o **Developer mode** em Configurações → Apps → Avançado.',
+        '**2.** Em Connection, cole a URL do servidor: `' + mcpUrl + '`. Autenticação: **No authentication**.',
+        '**3.** Confirme o aviso de risco, clique em **Create as a plugin** e revise as 4 ferramentas descobertas.',
+        '**4.** Numa conversa nova, digite **@** e escolha o Mythos, ou só peça: "Crie uma apresentação sobre…".',
+        'Para o app desktop e o Codex, o pacote do plugin (manifesto, skills e mcp.json) está no repositório: [github.com/marcosdeandradefilho/plugin-mythos](https://github.com/marcosdeandradefilho/plugin-mythos).'
+      ] },
+      { type: 'faq', id: 'faq', navLabel: 'FAQ', title: 'Perguntas frequentes', items: [
+        { q: 'Preciso de conta paga?', a: 'Plugins com servidor MCP personalizado dependem das políticas da sua conta e workspace do ChatGPT. O servidor Mythos em si é gratuito e não pede login.' },
+        { q: 'Meus conteúdos ficam guardados?', a: 'Não. O servidor não tem banco de dados: o conteúdo viaja dentro do próprio link (após o #), que não é enviado ao servidor quando você abre a página.' },
+        { q: 'Funciona fora do ChatGPT?', a: 'Sim. O servidor segue o padrão aberto MCP Apps, e os links abrem em qualquer navegador moderno.' },
+        { q: 'Posso editar depois?', a: 'Peça a alteração na conversa. O ChatGPT renderiza de novo com o conteúdo atualizado.' }
+      ] },
+      { type: 'footer', text: 'Plugin Mythos · código aberto (MIT)', links: [{ label: 'GitHub', url: 'https://github.com/marcosdeandradefilho/plugin-mythos' }, { label: 'Privacidade', url: origin + '/privacy' }, { label: 'Termos', url: origin + '/terms' }] }
+    ]
+  };
+  window.Mythos.render(page, document.getElementById('app'), {});
+})();
+</script>
+</body>
+</html>

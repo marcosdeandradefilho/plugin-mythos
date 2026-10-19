@@ -1,0 +1,10 @@
+node_modules/
+.vercel/
+.env*
+public/engine.js
+public/demos.js
+*.log
+
+.vercel
+.claude-flow/
+.claude/

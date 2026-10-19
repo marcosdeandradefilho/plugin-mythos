@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mythos Studio</title>
+<style>
+  html, body { margin: 0; padding: 0; background: transparent; }
+  body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  .shell-msg { display: flex; align-items: center; gap: 10px; padding: 18px 16px; font-size: 14px; color: #6b7280; }
+  .shell-msg.err { color: #b91c1c; }
+  .spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: shs .8s linear infinite; }
+  @keyframes shs { to { transform: rotate(360deg); } }
+  .deck-host { width: 100%; border-radius: 14px; overflow: hidden; }
+  .is-fs .deck-host, .is-fs .site-frame { border-radius: 0; }
+  .site-frame { position: relative; width: 100%; height: 640px; overflow: auto; border-radius: 14px; }
+  .site-tools { position: sticky; top: 0; height: 0; z-index: 50; display: flex; justify-content: flex-end; gap: 6px; padding-right: 10px; }
+  .site-tools button { margin-top: 76px; appearance: none; border: 0; cursor: pointer; height: 34px; padding: 0 12px; border-radius: 999px; font: 600 12px/1 ui-sans-serif, system-ui, sans-serif; color: #fff; background: rgba(17, 17, 27, .72); backdrop-filter: blur(8px); box-shadow: 0 6px 20px rgba(0, 0, 0, .25); }
+  .site-tools button:hover { background: rgba(17, 17, 27, .9); }
+</style>
+</head>
+<body>
+<div id="app"><div class="shell-msg"><span class="spin"></span><span>Mythos está preparando a visualização…</span></div></div>
+<script>/*__ENGINE__*/</script>
+<script>
+(function () {
+  'use strict';
+  var app = document.getElementById('app');
+  var state = { input: null, result: null, mode: 'inline', rendered: '', viewUrl: '', kind: '', maxHeight: 0 };
+  var rpcId = 0, pending = {};
+
+  function send(msg) { try { window.parent.postMessage(msg, '*'); } catch (e) {} }
+  function notify(method, params) { send({ jsonrpc: '2.0', method: method, params: params || {} }); }
+  function request(method, params) {
+    return new Promise(function (resolve, reject) {
+      var id = ++rpcId;
+      pending[id] = { resolve: resolve, reject: reject };
+      send({ jsonrpc: '2.0', id: id, method: method, params: params || {} });
+      setTimeout(function () { if (pending[id]) { delete pending[id]; reject(new Error('timeout: ' + method)); } }, 10000);
+    });
+  }
+
+  window.addEventListener('message', function (ev) {
+    if (ev.source !== window.parent) return;
+    var m = ev.data;
+    if (!m || m.jsonrpc !== '2.0') return;
+    if (m.id != null && !m.method) {
+      var p = pending[m.id];
+      if (p) { delete pending[m.id]; if (m.error) p.reject(m.error); else p.resolve(m.result); }
+      return;
+    }
+    if (m.method === 'ui/notifications/tool-input') { state.input = (m.params && m.params.arguments) || null; tryRender(false); }
+    else if (m.method === 'ui/notifications/tool-result') { state.result = m.params || null; tryRender(true); }
+    else if (m.method === 'ui/notifications/host-context-changed') { applyContext(m.params || {}); }
+    else if (m.id != null) { send({ jsonrpc: '2.0', id: m.id, result: {} }); }
+  }, { passive: true });
+
+  function applyContext(ctx) {
+    if (ctx.displayMode && ctx.displayMode !== state.mode) { state.mode = ctx.displayMode; layout(); }
+    if (ctx.containerDimensions && ctx.containerDimensions.maxHeight) { state.maxHeight = ctx.containerDimensions.maxHeight; layout(); }
+  }
+
+  function openai() { return typeof window !== 'undefined' ? window.openai : undefined; }
+
+  function payloadFromState() {
+    var r = state.result, sc = r && r.structuredContent, meta = r && r._meta;
+    var oa = openai();
+    if (sc && sc.viewUrl) state.viewUrl = sc.viewUrl;
+    if (!state.viewUrl && oa && oa.toolOutput && oa.toolOutput.viewUrl) state.viewUrl = oa.toolOutput.viewUrl;
+    var p = meta && meta['mythos/payload'];
+    if (!p && oa && oa.toolResponseMetadata && oa.toolResponseMetadata['mythos/payload']) p = oa.toolResponseMetadata['mythos/payload'];
+    if (p) return p;
+    var input = state.input || (oa && oa.toolInput) || null;
+    if (!input) return null;
+    var kind = (sc && sc.kind) || (oa && oa.toolOutput && oa.toolOutput.kind) || (input.slides ? 'slides' : input.sections ? 'site' : input.html ? 'html' : '');
+    if (!kind) return null;
+    var o = {};
+    for (var k in input) o[k] = input[k];
+    o.kind = kind;
+    return o;
+  }
+
+  function tryRender(final) {
+    var p = payloadFromState();
+    if (!p) { if (final) showMsg('Não recebi o conteúdo para renderizar. Peça ao ChatGPT para tentar de novo.', true); return; }
+    if (p.kind === 'html' && !final && !(state.result || (openai() && openai().toolOutput))) return;
+    var sig = JSON.stringify(p);
+    if (sig === state.rendered) return;
+    state.rendered = sig;
+    state.kind = p.kind;
+    try { renderPayload(p); } catch (e) { showMsg('Erro ao renderizar: ' + (e && e.message ? e.message : e), true); }
+  }
+
+  function showMsg(text, isErr) {
+    app.innerHTML = '';
+    var d = document.createElement('div');
+    d.className = 'shell-msg' + (isErr ? ' err' : '');
+    d.textContent = text;
+    app.appendChild(d);
+    reportSize();
+  }
+
+  function toggleFullscreen() {
+    var target = state.mode === 'fullscreen' ? 'inline' : 'fullscreen';
+    request('ui/request-display-mode', { mode: target }).then(function (res) {
+      state.mode = (res && res.mode) || target;
+      layout();
+    }).catch(function () {
+      var oa = openai();
+      if (oa && oa.requestDisplayMode) { oa.requestDisplayMode({ mode: target }); state.mode = target; layout(); }
+      else if (document.documentElement.requestFullscreen) { document.documentElement.requestFullscreen().catch(function () {}); }
+    });
+  }
+
+  function openLink() {
+    var url = state.viewUrl;
+    if (!url) return;
+    request('ui/open-link', { url: url }).catch(function () {
+      var oa = openai();
+      if (oa && oa.openExternal) oa.openExternal({ href: url });
+      else window.open(url, '_blank', 'noopener');
+    });
+  }
+
+  var deckCtl = null;
+  function renderPayload(p) {
+    app.innerHTML = '';
+    if (p.kind === 'html') return writeHtml(p);
+    if (p.kind === 'site') {
+      var frame = document.createElement('div');
+      frame.className = 'site-frame';
+      var tools = document.createElement('div');
+      tools.className = 'site-tools';
+      tools.innerHTML = '<button type="button" data-a="fs">⤢ Tela cheia</button>' + (state.viewUrl ? '<button type="button" data-a="link">↗ Abrir link</button>' : '');
+      tools.addEventListener('click', function (e) {
+        var b = e.target.closest('button');
+        if (!b) return;
+        if (b.getAttribute('data-a') === 'fs') toggleFullscreen(); else openLink();
+      });
+      var inner = document.createElement('div');
+      frame.appendChild(tools);
+      frame.appendChild(inner);
+      app.appendChild(frame);
+      window.Mythos.render(p, inner, { scrollRoot: frame });
+      layout();
+      return;
+    }
+    var host = document.createElement('div');
+    host.className = 'deck-host';
+    app.appendChild(host);
+    layout();
+    var buttons = state.viewUrl ? [{ icon: 'globe', label: 'Abrir link', title: 'Abrir em nova aba (link compartilhável, download e PDF)', onClick: openLink }] : [];
+    deckCtl = window.Mythos.render(p, host, { buttons: buttons, onFullscreen: toggleFullscreen, focus: false });
+    layout();
+  }
+
+  function layout() {
+    var fs = state.mode === 'fullscreen';
+    document.documentElement.classList.toggle('is-fs', fs);
+    var w = document.documentElement.clientWidth || window.innerWidth || 760;
+    var vh = window.innerHeight || 720;
+    var host = app.querySelector('.deck-host');
+    if (host) {
+      var hInline = Math.round(w * 9 / 16) + 49;
+      if (state.maxHeight && hInline > state.maxHeight) hInline = state.maxHeight;
+      host.style.height = (fs ? vh : hInline) + 'px';
+      if (deckCtl && deckCtl.fit) deckCtl.fit();
+    }
+    var frame = app.querySelector('.site-frame');
+    if (frame) {
+      var hs = 640;
+      if (state.maxHeight && hs > state.maxHeight) hs = state.maxHeight;
+      frame.style.height = (fs ? vh : hs) + 'px';
+    }
+    reportSize();
+  }
+
+  function reportSize() {
+    if (state.kind === 'html') return;
+    requestAnimationFrame(function () {
+      var h = Math.ceil(document.documentElement.scrollHeight);
+      var w = Math.ceil(document.documentElement.scrollWidth);
+      notify('ui/notifications/size-changed', { width: w, height: h });
+    });
+  }
+
+  // HTML livre: o documento do widget é substituído pelo HTML gerado, com um pequeno ajudante
+  // que mantém o tamanho informado ao host e oferece tela cheia / abrir link.
+  function writeHtml(p) {
+    var url = JSON.stringify(state.viewUrl || '');
+    var helper = [
+      '(function(){',
+      'var mode=' + JSON.stringify(state.mode) + ',id=9000,url=' + url + ';',
+      'function post(m){try{window.parent.postMessage(m,"*")}catch(e){}}',
+      'function size(){if(mode==="fullscreen")return;var h=Math.min(Math.max(document.documentElement.scrollHeight,360),760);post({jsonrpc:"2.0",method:"ui/notifications/size-changed",params:{width:document.documentElement.scrollWidth,height:h}})}',
+      'window.addEventListener("message",function(e){var m=e.data;if(!m||m.jsonrpc!=="2.0")return;if(m.method==="ui/notifications/host-context-changed"&&m.params&&m.params.displayMode){mode=m.params.displayMode;size()}else if(m.id!=null&&m.result&&m.result.mode){mode=m.result.mode}else if(m.id!=null&&m.method){post({jsonrpc:"2.0",id:m.id,result:{}})}});',
+      'function bar(){var host=document.createElement("div");host.style.cssText="position:fixed;right:10px;bottom:10px;z-index:2147483647";var sh=host.attachShadow?host.attachShadow({mode:"open"}):host;',
+      'sh.innerHTML="<style>button{appearance:none;border:0;cursor:pointer;height:32px;padding:0 12px;margin-left:6px;border-radius:999px;font:600 12px/1 system-ui,sans-serif;color:#fff;background:rgba(17,17,27,.72);box-shadow:0 6px 20px rgba(0,0,0,.25)}button:hover{background:rgba(17,17,27,.92)}</style><button data-a=fs title=\'Tela cheia\'>⤢</button>"+(url?"<button data-a=link title=\'Abrir link compartilhável\'>↗</button>":"");',
+      'sh.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("button");if(!b)return;if(b.getAttribute("data-a")==="fs"){var t=mode==="fullscreen"?"inline":"fullscreen";mode=t;post({jsonrpc:"2.0",id:++id,method:"ui/request-display-mode",params:{mode:t}});if(window.openai&&window.openai.requestDisplayMode){try{window.openai.requestDisplayMode({mode:t})}catch(x){}}}else{post({jsonrpc:"2.0",id:++id,method:"ui/open-link",params:{url:url}})}});',
+      'document.body.appendChild(host)}',
+      'function start(){if(!document.body){return setTimeout(start,30)}bar();size();if(window.ResizeObserver)new ResizeObserver(size).observe(document.documentElement);window.addEventListener("load",size)}',
+      'start()})();'
+    ].join('');
+    var html = String(p.html || '');
+    var tag = '<scr' + 'ipt>' + helper + '</scr' + 'ipt>';
+    html = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, tag + '</body>') : html + tag;
+    document.open();
+    document.write(html);
+    document.close();
+  }
+
+  // Compatibilidade com a API window.openai (hosts que ainda não falam MCP Apps).
+  function fromGlobals() {
+    var oa = openai();
+    if (!oa) return;
+    if (oa.displayMode) state.mode = oa.displayMode;
+    if (oa.toolOutput || oa.toolInput) tryRender(!!oa.toolOutput);
+  }
+  window.addEventListener('openai:set_globals', fromGlobals, { passive: true });
+  window.addEventListener('resize', function () { layout(); });
+
+  request('ui/initialize', {
+    appInfo: { name: 'plugin-mythos', version: '1.0.0' },
+    appCapabilities: { availableDisplayModes: ['inline', 'fullscreen'] },
+    protocolVersion: '2026-01-26'
+  }).then(function (res) {
+    applyContext((res && res.hostContext) || {});
+    notify('ui/notifications/initialized', {});
+  }).catch(function () { fromGlobals(); });
+
+  setTimeout(fromGlobals, 1200);
+  setTimeout(function () { if (!state.rendered && !state.input && !state.result) showMsg('Aguardando o ChatGPT enviar o conteúdo…', false); }, 6000);
+})();
+</script>
+</body>
+</html>

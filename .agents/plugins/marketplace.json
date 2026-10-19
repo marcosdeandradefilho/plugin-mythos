@@ -1,0 +1,20 @@
+{
+  "name": "plugin-mythos",
+  "interface": {
+    "displayName": "Mythos"
+  },
+  "plugins": [
+    {
+      "name": "plugin-mythos",
+      "source": {
+        "source": "local",
+        "path": "./plugins/plugin-mythos"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Creativity"
+    }
+  ]
+}

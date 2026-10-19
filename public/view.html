@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.png">
+<title>Mythos · Visualização</title>
+<style>
+  html, body { margin: 0; }
+  body { background: #0b0b14; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #app.is-deck { height: 100vh; height: 100dvh; }
+  .vmsg { min-height: 100vh; display: grid; place-items: center; color: #c9c9e0; text-align: center; padding: 24px; box-sizing: border-box; }
+  .vmsg h1 { font-size: 22px; margin: 0 0 8px; color: #fff; }
+  .vmsg a { color: #a78bfa; }
+  .vtools { position: fixed; right: 14px; bottom: 16px; z-index: 1000; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .is-deck-page .vtools { bottom: auto; top: 14px; }
+  .vtools button { appearance: none; border: 0; cursor: pointer; height: 36px; padding: 0 14px; border-radius: 999px; font: 600 13px/1 ui-sans-serif, system-ui, sans-serif; color: #fff; background: rgba(17, 17, 27, .74); backdrop-filter: blur(8px); box-shadow: 0 6px 20px rgba(0, 0, 0, .28); }
+  .vtools button:hover { background: rgba(17, 17, 27, .92); }
+  .vtoast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: #111; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 14px; z-index: 1001; opacity: 0; transition: opacity .25s; pointer-events: none; }
+  .vtoast.on { opacity: 1; }
+  @media print { .vtools, .vtoast { display: none !important; } #app.is-deck { height: auto; } body { background: none; } @page { size: 1280px 720px; margin: 0; } }
+</style>
+</head>
+<body>
+<div id="app"><div class="vmsg"><div>Carregando…</div></div></div>
+<script src="/engine.js"></script>
+<script>
+(function () {
+  'use strict';
+  var app = document.getElementById('app');
+
+  function msg(title, text) {
+    app.innerHTML = '<div class="vmsg"><div><h1></h1><p></p><p><a href="/">Plugin Mythos</a></p></div></div>';
+    app.querySelector('h1').textContent = title;
+    app.querySelector('p').textContent = text;
+  }
+
+  async function decode(b64) {
+    var s = b64.replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    var bin = atob(s), bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    var stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    return JSON.parse(await new Response(stream).text());
+  }
+
+  function slugify(s) {
+    return String(s || 'mythos').toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'mythos';
+  }
+
+  function toast(text) {
+    var t = document.createElement('div');
+    t.className = 'vtoast';
+    t.textContent = text;
+    document.body.appendChild(t);
+    requestAnimationFrame(function () { t.classList.add('on'); });
+    setTimeout(function () { t.classList.remove('on'); setTimeout(function () { t.remove(); }, 300); }, 2200);
+  }
+
+  async function download(p) {
+    var html;
+    if (p.kind === 'html') html = p.html;
+    else {
+      var src = await (await fetch('/engine.js')).text();
+      html = window.Mythos.standalone(p, src);
+    }
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=utf-8' }));
+    a.download = slugify(p.title) + '.html';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+
+  function tools(p) {
+    var bar = document.createElement('div');
+    bar.className = 'vtools';
+    bar.innerHTML = '<button type="button" data-a="dl">⬇ Baixar HTML</button>' + (p.kind === 'slides' ? '<button type="button" data-a="pdf">⎙ PDF</button>' : '') + '<button type="button" data-a="copy">🔗 Copiar link</button>';
+    bar.addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (!b) return;
+      var a = b.getAttribute('data-a');
+      if (a === 'dl') download(p).catch(function () { toast('Não foi possível gerar o arquivo.'); });
+      else if (a === 'pdf') window.print();
+      else if (a === 'copy') {
+        (navigator.clipboard ? navigator.clipboard.writeText(location.href) : Promise.reject()).then(function () { toast('Link copiado'); }, function () { toast('Copie o endereço da barra do navegador'); });
+      }
+    });
+    document.body.appendChild(bar);
+  }
+
+  async function main() {
+    var m = /[#&]d=([A-Za-z0-9_-]+)/.exec(location.hash);
+    if (!m) return msg('Link sem conteúdo', 'Este endereço é aberto a partir dos links gerados pelo Plugin Mythos no ChatGPT.');
+    if (typeof DecompressionStream === 'undefined') return msg('Navegador desatualizado', 'Abra este link em uma versão recente do Chrome, Edge, Safari ou Firefox.');
+    var p;
+    try { p = await decode(m[1]); } catch (e) { return msg('Link corrompido', 'O conteúdo do link está incompleto. Copie o link inteiro novamente.'); }
+    document.title = (p.title || 'Mythos') + ' · Mythos';
+    if (p.kind === 'html') {
+      document.open();
+      document.write(p.html);
+      document.close();
+      return;
+    }
+    if (p.kind === 'slides') { app.className = 'is-deck'; document.body.classList.add('is-deck-page'); }
+    app.innerHTML = '';
+    window.Mythos.render(p, app, {});
+    tools(p);
+  }
+
+  // Abrir outro link Mythos na mesma aba muda só o #hash: recarrega para renderizar o novo conteúdo.
+  window.addEventListener('hashchange', function () { location.reload(); });
+  main();
+})();
+</script>
+</body>
+</html>

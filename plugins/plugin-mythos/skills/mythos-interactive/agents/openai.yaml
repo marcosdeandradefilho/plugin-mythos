@@ -1,0 +1,11 @@
+interface:
+  display_name: "Mythos Interactive"
+  short_description: "Quizzes, simulations, games and custom HTML in the chat"
+  default_prompt: "Use Mythos to build an interactive quiz with scoring and explanations about this topic."
+dependencies:
+  tools:
+    - type: "mcp"
+      value: "mythos"
+      description: "Mythos design brief and HTML renderer"
+      transport: "streamable_http"
+      url: "https://plugin-mythos.vercel.app/mcp"

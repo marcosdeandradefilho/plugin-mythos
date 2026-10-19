@@ -1,0 +1,164 @@
+{
+  "title": "Aula Pronta",
+  "theme": "aurora",
+  "lang": "pt-BR",
+  "nav": {
+    "brand": "Aula Pronta",
+    "icon": "graduation",
+    "cta": {
+      "label": "Começar",
+      "url": "#precos"
+    }
+  },
+  "sections": [
+    {
+      "type": "hero",
+      "badge": "Novo · 2026",
+      "title": "Planeje uma semana de aulas em {20 minutos}",
+      "subtitle": "Planos, slides e atividades alinhados à BNCC, gerados com IA e revisados por você.",
+      "primaryCta": {
+        "label": "Testar grátis",
+        "url": "#precos"
+      },
+      "secondaryCta": {
+        "label": "Ver como funciona",
+        "url": "#como"
+      },
+      "note": "Exemplo de landing page gerada pelo Plugin Mythos."
+    },
+    {
+      "type": "logos",
+      "title": "Usado em escolas de exemplo",
+      "items": [
+        "Escola Aurora",
+        "Colégio Delta",
+        "Instituto Saber",
+        "Rede Horizonte"
+      ]
+    },
+    {
+      "type": "features",
+      "id": "recursos",
+      "navLabel": "Recursos",
+      "title": "Tudo o que a sua semana precisa",
+      "items": [
+        {
+          "icon": "book",
+          "title": "Planos de aula",
+          "text": "Objetivos, etapas e avaliação prontos para editar."
+        },
+        {
+          "icon": "layers",
+          "title": "Slides",
+          "text": "Apresentações com o seu estilo."
+        },
+        {
+          "icon": "target",
+          "title": "Atividades",
+          "text": "Exercícios com gabarito comentado."
+        }
+      ]
+    },
+    {
+      "type": "split",
+      "id": "como",
+      "navLabel": "Como funciona",
+      "title": "Você decide, a IA executa",
+      "text": "Escolha a turma, o tema e o tempo disponível.",
+      "bullets": [
+        "Alinhado à BNCC",
+        "Revisão em um clique",
+        "Exporta para PDF"
+      ],
+      "chart": {
+        "type": "bar",
+        "labels": [
+          "Antes",
+          "Depois"
+        ],
+        "series": [
+          {
+            "name": "Horas de planejamento por semana",
+            "values": [
+              6,
+              1.5
+            ]
+          }
+        ],
+        "suffix": " h"
+      }
+    },
+    {
+      "type": "stats",
+      "stats": [
+        {
+          "value": "1.200",
+          "label": "professores (exemplo)"
+        },
+        {
+          "value": "35.000",
+          "label": "aulas geradas (exemplo)"
+        },
+        {
+          "value": "4,8",
+          "label": "nota média (exemplo)"
+        }
+      ]
+    },
+    {
+      "type": "pricing",
+      "id": "precos",
+      "navLabel": "Preços",
+      "title": "Planos simples",
+      "plans": [
+        {
+          "name": "Grátis",
+          "price": "R$ 0",
+          "period": "/mês",
+          "features": [
+            "5 aulas por mês",
+            "Slides básicos"
+          ],
+          "cta": "Começar"
+        },
+        {
+          "name": "Professor",
+          "price": "R$ 29",
+          "period": "/mês",
+          "features": [
+            "Aulas ilimitadas",
+            "Todos os temas",
+            "Exportação PDF"
+          ],
+          "cta": "Assinar",
+          "highlighted": true
+        }
+      ]
+    },
+    {
+      "type": "faq",
+      "id": "faq",
+      "navLabel": "FAQ",
+      "title": "Perguntas frequentes",
+      "items": [
+        {
+          "q": "Preciso saber usar IA?",
+          "a": "Não. Você só escolhe tema e turma."
+        },
+        {
+          "q": "Posso editar tudo?",
+          "a": "Sim, todo conteúdo é editável."
+        }
+      ]
+    },
+    {
+      "type": "cta",
+      "title": "Recupere suas noites de domingo",
+      "text": "Comece agora, sem cartão.",
+      "button": {
+        "label": "Criar minha primeira aula",
+        "url": "#precos"
+      }
+    }
+  ]
+}
