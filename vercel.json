@@ -9,6 +9,7 @@
   },
   "rewrites": [
     { "source": "/mcp", "destination": "/api/mcp" },
+    { "source": "/mcp/", "destination": "/api/mcp" },
     { "source": "/.well-known/openai-apps-challenge", "destination": "/api/challenge" }
   ],
   "headers": [
