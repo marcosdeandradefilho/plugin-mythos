@@ -78,7 +78,7 @@ plugin-mythos/
 
 ```bash
 npm install
-npm test            # 33 verificações MCP (initialize, tools, recurso de UI, render, crítico, validação)
+npm test            # 32 verificações MCP (initialize, tools, recurso de UI, render, crítico, validação)
 npm run dev         # http://localhost:8787  ·  /mcp  ·  /harness?k=slides|site|html (host simulado)
 node test/mcp.test.mjs https://plugin-mythos.vercel.app/mcp   # testa a produção
 ```
